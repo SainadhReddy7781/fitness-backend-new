@@ -4,6 +4,7 @@ import com.example.fitness.model.User;
 import com.example.fitness.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.*;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 @CrossOrigin(origins = "http://localhost:5173")
@@ -14,6 +15,9 @@ public class UserController {
     @Autowired
     private UserRepository userRepository;
 
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
     @PostMapping("/register")
     public ResponseEntity<String> registerUser(@RequestBody User user) {
         String email = user.getEmail();
@@ -23,6 +27,8 @@ public class UserController {
             return ResponseEntity.badRequest().body("Email already registered!");
         }
 
+        // Encode the password before saving
+        user.setPassword(passwordEncoder.encode(password));
         userRepository.save(user);
         return ResponseEntity.ok("Registration successful!");
     }
@@ -34,7 +40,7 @@ public class UserController {
 
         User user = userRepository.findByEmail(email);
 
-        if (user != null && user.getPassword().equals(password)) {
+        if (user != null && passwordEncoder.matches(password, user.getPassword())) {
             return ResponseEntity.ok("Login successful!");
         }
 
